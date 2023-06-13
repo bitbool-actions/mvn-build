@@ -1,0 +1,53 @@
+name: "mvn-build"
+description: "build mvn app"
+inputs: 
+  JAVA_VERSION:
+    required: true
+  JAVA_DISTRIBUTION:
+    required: true
+  SKIP_TESTS:
+    required: false
+    default: "false"
+  JIB_JAVA_BASE:
+    required: true
+    default: "eclipse-temurin"
+  JIB_VERSION:
+    required: true
+    default: "3.3.0"
+  DOCKER_REGISTRY:
+    required: true
+  DOCKER_REPO:
+    required: true
+  BUILD_ARGS:
+    required: false
+    default: ""     
+  TAGS_CSV:  
+    required: true
+      
+runs:
+  using: "composite"
+  steps:
+  
+      - uses: actions/setup-java@v3
+        with:
+          distribution: ${{ inputs.JAVA_DISTRIBUTION }}
+          java-version: ${{ inputs.JAVA_VERSION }}
+
+      - name: Cache mvn packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.OS }}-mvn-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.OS }}-mvn-
+            ${{ runner.OS }}-
+
+      - name: Jib build
+        shell: bash
+        run: |
+          mvn -B -e compile -Dmaven.test.skip=${{ inputs.SKIP_TESTS }} \
+              com.google.cloud.tools:jib-maven-plugin:${{ inputs.JIB_VERSION }}:build \
+              -Djib.from.image=${{ inputs.JIB_JAVA_BASE }}:${{ inputs.JAVA_VERSION }}  \
+              -Djib.to.image=${{ inputs.DOCKER_REGISTRY }}/${{ inputs.DOCKER_REPO }}  \
+              -Djib.container.creationTime=USE_CURRENT_TIMESTAMP \
+              -Djib.to.tags=${{ inputs.TAGS_CSV }}  ${{ inputs.BUILD_ARGS }}
