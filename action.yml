@@ -23,6 +23,12 @@ inputs:
     default: ""     
   TAGS_CSV:  
     required: true
+  MAVEN_USERNAME:
+    required: false
+    default: ""
+  MAVEN_TOKEN:
+    required: false
+    default: ""    
       
 runs:
   using: "composite"
@@ -32,6 +38,19 @@ runs:
         with:
           distribution: ${{ inputs.JAVA_DISTRIBUTION }}
           java-version: ${{ inputs.JAVA_VERSION }}
+          cache: maven
+        if: ${{ inputs.MAVEN_USERNAME == '' }}  
+
+      - name: Setup Java with private Maven repository
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ inputs.JAVA_DISTRIBUTION }}
+          java-version: ${{ inputs.JAVA_VERSION }}
+          cache: maven
+          server-id: github
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_TOKEN
+        if: ${{ inputs.MAVEN_USERNAME != '' }}
 
       - name: Cache mvn packages
         uses: actions/cache@v3
@@ -44,6 +63,9 @@ runs:
 
       - name: Jib build
         shell: bash
+        env:
+          MAVEN_USERNAME: ${{ inputs.MAVEN_USERNAME }}
+          MAVEN_TOKEN: ${{ inputs.MAVEN_TOKEN }}        
         run: |
           mvn -B -e compile -Dmaven.test.skip=${{ inputs.SKIP_TESTS }} \
               com.google.cloud.tools:jib-maven-plugin:${{ inputs.JIB_VERSION }}:build \
