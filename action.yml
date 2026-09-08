@@ -52,14 +52,14 @@ runs:
           server-password: MAVEN_TOKEN
         if: ${{ inputs.MAVEN_USERNAME != '' }}
 
-      - name: Cache mvn packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.OS }}-mvn-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.OS }}-mvn-
-            ${{ runner.OS }}-
+      # - name: Cache mvn packages # Now handled by setup-java@v3
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.m2
+      #     key: ${{ runner.OS }}-mvn-${{ hashFiles('**/pom.xml') }}
+      #     restore-keys: |
+      #       ${{ runner.OS }}-mvn-
+      #       ${{ runner.OS }}-
 
       - name: Jib build
         shell: bash
